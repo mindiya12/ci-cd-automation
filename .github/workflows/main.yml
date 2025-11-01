@@ -36,7 +36,7 @@ jobs:
         run: |
           STATUS="${{ needs.build.result }}"
           
-          curl -X POST YOUR_NGROK_URL/webhook/ci-monitor \
+          curl -X POST https://unsecluding-incudate-frida.ngrok-free.dev/webhook-test/ci-monitor \
             -H "Content-Type: application/json" \
             -d "{
               \"status\": \"$STATUS\",
