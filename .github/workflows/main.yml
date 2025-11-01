@@ -18,7 +18,7 @@ jobs:
       - name: Run build
         run: |
           echo "Building..."
-          exit 1
+          # exit 1
           echo "Build done!"
       
       - name: Run tests
