@@ -13,18 +13,20 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3          ← Get your actual code
       
-      - name: Run build
-        run: |
-          echo "Building..."
-          # exit 1
-          echo "Build done!"
+      - name: Set up Python
+        uses: actions/setup-python@v4       ← Install Python
+        with:
+          python-version: '3.10'
       
-      - name: Run tests
+      - name: Install dependencies
         run: |
-          echo "Testing..."
-          echo "Tests passed!"
+          pip install pytest                ← Install test framework
+          pip install -r requirements.txt   ← Install your app dependencies (if you have them)
+      
+      - name: Run tests                     ← Actually test your code
+        run: python -m pytest test.py       ← Runs YOUR tests
   
   notify:
     runs-on: ubuntu-latest
@@ -35,24 +37,15 @@ jobs:
         env:
           BUILD_RESULT: ${{ needs.build.result }}
         run: |
-          echo "=== DEBUG INFO ==="
-          echo "Build result from needs.build.result: $BUILD_RESULT"
-          
-          # Determine status
           if [ "$BUILD_RESULT" = "success" ]; then
             STATUS="success"
           elif [ "$BUILD_RESULT" = "failure" ]; then
             STATUS="failure"
-          elif [ "$BUILD_RESULT" = "cancelled" ]; then
-            STATUS="cancelled"
           else
             STATUS="unknown"
           fi
           
-          echo "Sending status: $STATUS"
-          
-          # Send to n8n - PLAIN URL WITHOUT MARKDOWN
-          curl -v -X POST https://unsecluding-incudate-frida.ngrok-free.dev/webhook-test/ci-monitor \
+          curl -X POST https://your-ngrok-url/webhook-test/ci-monitor \
             -H "Content-Type: application/json" \
             -d "{
               \"status\": \"$STATUS\",
@@ -63,5 +56,4 @@ jobs:
               \"workflow\": \"${{ github.workflow }}\",
               \"run_url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
             }"
-          
-          echo "Notification sent!"
+
