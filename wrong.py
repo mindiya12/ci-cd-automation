@@ -1,2 +1,3 @@
-def broken():\n
-  x = 5 +
+def calculate()    # Missing colon
+    x = 5
+    return x +
