@@ -18,13 +18,12 @@ jobs:
       - name: Run build
         run: |
           echo "Building..."
-          #Uncomment to test failure: exit 1
+          exit 1
           echo "Build done!"
       
       - name: Run tests
         run: |
           echo "Testing..."
-          #Uncomment to test failure: exit 1
           echo "Tests passed!"
   
   notify:
@@ -47,4 +46,3 @@ jobs:
               \"workflow\": \"${{ github.workflow }}\",
               \"run_url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
             }"
-
