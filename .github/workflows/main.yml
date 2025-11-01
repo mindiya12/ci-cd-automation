@@ -31,11 +31,28 @@ jobs:
     needs: build
     if: always()
     steps:
-      - name: Send notification
+      - name: Determine status and send notification
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
         run: |
-          STATUS="${{ needs.build.result }}"
+          echo "=== DEBUG INFO ==="
+          echo "Build result from needs.build.result: $BUILD_RESULT"
           
-          curl -X POST https://unsecluding-incudate-frida.ngrok-free.dev/webhook-test/ci-monitor \
+          # Determine status
+          if [ "$BUILD_RESULT" = "success" ]; then
+            STATUS="success"
+          elif [ "$BUILD_RESULT" = "failure" ]; then
+            STATUS="failure"
+          elif [ "$BUILD_RESULT" = "cancelled" ]; then
+            STATUS="cancelled"
+          else
+            STATUS="unknown"
+          fi
+          
+          echo "Sending status: $STATUS"
+          
+          # Send to n8n
+          curl -v -X POST https://unsecluding-incudate-frida.ngrok-free.dev/webhook-test/ci-monitor \
             -H "Content-Type: application/json" \
             -d "{
               \"status\": \"$STATUS\",
@@ -46,3 +63,5 @@ jobs:
               \"workflow\": \"${{ github.workflow }}\",
               \"run_url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
             }"
+          
+          echo "Notification sent!"
