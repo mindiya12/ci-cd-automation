@@ -18,13 +18,13 @@ jobs:
       - name: Run build
         run: |
           echo "Building..."
-          Uncomment to test failure: exit 1
+          #Uncomment to test failure: exit 1
           echo "Build done!"
       
       - name: Run tests
         run: |
           echo "Testing..."
-          Uncomment to test failure: exit 1
+          #Uncomment to test failure: exit 1
           echo "Tests passed!"
   
   notify:
