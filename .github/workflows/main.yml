@@ -51,7 +51,7 @@ jobs:
           
           echo "Sending status: $STATUS"
           
-          # Send to n8n
+          # Send to n8n - PLAIN URL WITHOUT MARKDOWN
           curl -v -X POST https://unsecluding-incudate-frida.ngrok-free.dev/webhook-test/ci-monitor \
             -H "Content-Type: application/json" \
             -d "{
