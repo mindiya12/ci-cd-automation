@@ -13,10 +13,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3          ← Get your actual code
+        uses: actions/checkout@v3         
       
       - name: Set up Python
-        uses: actions/setup-python@v4       ← Install Python
+        uses: actions/setup-python@v4       
         with:
           python-version: '3.10'
       
@@ -45,7 +45,7 @@ jobs:
             STATUS="unknown"
           fi
           
-          curl -X POST https://your-ngrok-url/webhook-test/ci-monitor \
+          curl -X POST https://unsecluding-incudate-frida.ngrok-free.dev/webhook-test/ci-monitor \
             -H "Content-Type: application/json" \
             -d "{
               \"status\": \"$STATUS\",
