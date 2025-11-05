@@ -1,2 +1,2 @@
-def hello()
-    print("Missing colon"
+def hello():
+    print("Missing colon")
