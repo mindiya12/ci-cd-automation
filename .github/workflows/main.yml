@@ -111,7 +111,7 @@ jobs:
           echo "   Security Issues: ${BANDIT_ISSUES:-0}"
           echo "   Vulnerabilities: ${SAFETY_VULNS:-0}"
           
-          curl -X POST https://YOUR-NGROK-URL/webhook-test/ci-monitor \
+          curl -X POST https://unsecluding-incudate-frida.ngrok-free.dev/webhook-test/ci-monitor \
             -H "Content-Type: application/json" \
             -d "{
               \"status\": \"$STATUS\",
