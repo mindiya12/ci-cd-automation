@@ -1,3 +1,3 @@
-def calculate()    # Missing colon
+def calculate():    # Missing colon
     x = 5
-    return x +
+    return x + 2
