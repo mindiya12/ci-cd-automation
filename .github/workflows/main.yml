@@ -1,4 +1,4 @@
-name: CI Build Monitor - Phase 1
+name: CI/CD Pipeline
 
 on:
   push:
@@ -20,44 +20,68 @@ jobs:
         with:
           python-version: '3.10'
       
-      # PHASE 1 - PART 1: Syntax Validation
+      # PHASE 1 CHECKS
       - name: 1️⃣ Check Python Syntax
         run: |
           echo "🔍 Checking Python syntax..."
           python -m compileall -q .
           echo "✅ Syntax check passed!"
       
-      # PHASE 1 - PART 2: Linting
-      - name: 2️⃣ Install Linter
+      - name: 2️⃣ Install Dependencies
         run: |
-          echo "📦 Installing flake8..."
-          pip install flake8
+          echo "📦 Installing dependencies..."
+          pip install flake8 pytest pytest-cov bandit safety
+          echo "✅ Dependencies installed!"
       
-      - name: 2️⃣ Lint Code
+      - name: 3️⃣ Lint Code
         run: |
           echo "🧹 Running code linter..."
-          # Stop on syntax errors or undefined names
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # Show other issues but don't fail
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
           echo "✅ Linting completed!"
       
-      # PHASE 1 - PART 3: Testing
-      - name: 3️⃣ Install Test Framework
+      # PHASE 2 - CODE COVERAGE
+      - name: 4️⃣ Run Tests with Coverage
         run: |
-          echo "📦 Installing pytest..."
-          pip install pytest
+          echo "🧪 Running tests with coverage tracking..."
+          pytest --cov=. --cov-report=term-missing --cov-report=json --cov-report=html -v
+          echo "✅ Tests completed!"
       
-      - name: 3️⃣ Run Tests
+      - name: 4️⃣ Extract Coverage Percentage
+        id: coverage
         run: |
-          echo "🧪 Running tests..."
-          if [ -d "tests" ] || ls test_*.py 2>/dev/null; then
-            pytest -v
-          else
-            echo "⚠️  No tests found. Create test files to enable testing."
-            echo "   Example: Create 'test_example.py' or 'tests/' folder"
-          fi
-          echo "✅ Testing phase completed!"
+          COVERAGE=$(python -c "import json; print(json.load(open('coverage.json'))['totals']['percent_covered'])")
+          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+          echo "📊 Code Coverage: $COVERAGE%"
+      
+      # PHASE 2 - SECURITY SCANNING
+      - name: 5️⃣ Security Scan - Bandit
+        id: bandit
+        continue-on-error: true
+        run: |
+          echo "🔒 Running security scan (Bandit)..."
+          bandit -r . -f json -o bandit-report.json --exclude './tests/*,./venv/*' || true
+          ISSUES=$(python -c "import json; data=json.load(open('bandit-report.json')); print(len(data.get('results', [])))")
+          echo "issues=$ISSUES" >> $GITHUB_OUTPUT
+          echo "🔒 Security issues found: $ISSUES"
+      
+      - name: 6️⃣ Security Scan - Safety
+        id: safety
+        continue-on-error: true
+        run: |
+          echo "🛡️ Checking for vulnerable dependencies..."
+          pip freeze > requirements-check.txt
+          safety check -r requirements-check.txt --json > safety-report.json || true
+          VULNS=$(python -c "import json; data=json.load(open('safety-report.json')); print(len(data.get('vulnerabilities', [])))" || echo "0")
+          echo "vulnerabilities=$VULNS" >> $GITHUB_OUTPUT
+          echo "🛡️ Vulnerabilities found: $VULNS"
+      
+      # Upload coverage report as artifact
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: htmlcov/
   
   notify:
     runs-on: ubuntu-latest
@@ -65,10 +89,14 @@ jobs:
     if: always()
     
     steps:
-      - name: Send Discord Notification
+      - name: Send Enhanced Discord Notification
         env:
           BUILD_RESULT: ${{ needs.build.result }}
+          COVERAGE: ${{ needs.build.outputs.coverage }}
+          BANDIT_ISSUES: ${{ needs.build.outputs.bandit.issues }}
+          SAFETY_VULNS: ${{ needs.build.outputs.safety.vulnerabilities }}
         run: |
+          # Determine status
           if [ "$BUILD_RESULT" = "success" ]; then
             STATUS="success"
           elif [ "$BUILD_RESULT" = "failure" ]; then
@@ -77,12 +105,19 @@ jobs:
             STATUS="cancelled"
           fi
           
-          echo "📤 Sending notification with status: $STATUS"
+          echo "📤 Sending enhanced notification..."
+          echo "   Status: $STATUS"
+          echo "   Coverage: ${COVERAGE:-N/A}%"
+          echo "   Security Issues: ${BANDIT_ISSUES:-0}"
+          echo "   Vulnerabilities: ${SAFETY_VULNS:-0}"
           
-          curl -X POST https://unsecluding-incudate-frida.ngrok-free.dev/webhook-test/ci-monitor \
+          curl -X POST https://YOUR-NGROK-URL/webhook-test/ci-monitor \
             -H "Content-Type: application/json" \
             -d "{
               \"status\": \"$STATUS\",
+              \"coverage\": \"${COVERAGE:-0}\",
+              \"security_issues\": \"${BANDIT_ISSUES:-0}\",
+              \"vulnerabilities\": \"${SAFETY_VULNS:-0}\",
               \"repository\": \"${{ github.repository }}\",
               \"branch\": \"${{ github.ref_name }}\",
               \"author\": \"${{ github.actor }}\",
@@ -91,4 +126,4 @@ jobs:
               \"run_url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
             }"
           
-          echo "✅ Notification sent!"
+          echo "✅ Enhanced notification sent!"
